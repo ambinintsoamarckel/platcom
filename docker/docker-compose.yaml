@@ -1,0 +1,52 @@
+version: '3.8'
+services:
+    symfony:
+        container_name: platcom
+        build: symfony
+        ports:
+            - "9000:8000"
+        volumes:
+            - ./project:/var/www/
+        networks:
+            - mahm
+
+    mailer:
+        image: schickling/mailcatcher
+        container_name: platcom_mail
+        ports: [1025, 1080]
+        networks:
+            - mahm
+
+    db:
+        image: mysql
+        container_name: platcom_mysql
+        restart: always
+        environment:
+    
+            MYSQL_EMPTY_PASSWORD: "yes"
+      
+        
+        ports: 
+            - "3306:3306"    
+        volumes:
+            - db_data:/var/lib/mysql
+        networks:
+            - mahm
+
+
+    phpmyadmin:
+        depends_on:
+        - db
+        image: phpmyadmin
+        container_name: platcom_phpmyadmin
+        restart: always
+        ports:
+        - "9001:80"
+        environment:
+            PMA_HOST: db
+        networks:
+            - mahm
+volumes:
+  db_data:
+networks:
+  mahm:
