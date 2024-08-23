@@ -1,0 +1,44 @@
+<?php
+// src/Service/LogoutInactiveUserService.php
+
+namespace App\Service;
+
+use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
+use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
+use Symfony\Component\Security\Core\Exception\AccessDeniedException;
+use Symfony\Component\Security\Core\Security;
+use Symfony\Component\Security\Http\Logout\DefaultLogoutSuccessHandler;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+
+class LogoutInactiveUserService
+{
+    private $tokenStorage;
+    private $authorizationChecker;
+    private $logoutSuccessHandler;
+
+    public function __construct(TokenStorageInterface $tokenStorage, AuthorizationCheckerInterface $authorizationChecker, DefaultLogoutSuccessHandler $logoutSuccessHandler)
+    {
+        $this->tokenStorage = $tokenStorage;
+        $this->authorizationChecker = $authorizationChecker;
+        $this->logoutSuccessHandler = $logoutSuccessHandler;
+    }
+
+    public function logoutInactiveUser()
+    {
+        // Get the current user from the token storage
+        $user = $this->tokenStorage->getToken() ? $this->tokenStorage->getToken()->getUser() : null;
+
+        // Check if the user is active
+        if ($user ) {
+            // Log the user out
+            $request = new Request();
+            $response = $this->logoutSuccessHandler->onLogoutSuccess($request);
+
+            // Return the response to log the user out
+            return $response;
+        }
+    }
+}
+
+?>

@@ -1,17 +1,49 @@
 security:
     # https://symfony.com/doc/current/security.html#registering-the-user-hashing-passwords
-    password_hashers:
-        Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface: 'auto'
+    #password_hashers:
+    #    Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface: 'auto'
     # https://symfony.com/doc/current/security.html#loading-the-user-the-user-provider
+    password_hashers:
+        App\Entity\User:
+            algorithm: md5
+            encode_as_base64: false
+            iterations: 0
     providers:
-        users_in_memory: { memory: null }
+        app_user_provider:
+            entity:
+                class: App\Entity\User
+                property: uuid
+        jwt:
+            lexik_jwt:
+                class: App\Entity\User 
     firewalls:
-        dev:
-            pattern: ^/(_(profiler|wdt)|css|images|js)/
-            security: false
+
+        api:
+            pattern:   ^/api
+            entry_point: jwt
+            stateless: true
+            provider: jwt
+            jwt: ~
+            refresh_jwt:
+                check_path: /api/token/refresh
+                provider: app_user_provider
+            logout:
+                path: api_token_invalidate
+                # where to redirect after logout
+                target: /api
+            login_throttling:
+                max_attempts: 3         
+                interval: '10 minutes'
         main:
-            lazy: true
-            provider: users_in_memory
+            json_login:
+                check_path: /authenticator_token
+                provider: app_user_provider
+                username_path: uuid
+                password_path: password
+                success_handler: lexik_jwt_authentication.handler.authentication_success
+                failure_handler: lexik_jwt_authentication.handler.authentication_failure
+
+
 
             # activate different ways to authenticate
             # https://symfony.com/doc/current/security.html#the-firewall
@@ -21,9 +53,23 @@ security:
 
     # Easy way to control access for large sections of your site
     # Note: Only the *first* access control that matches will be used
+    role_hierarchy:
+        ROLE_BUYER: ROLE_USER
+        ROLE_SELLER: ROLE_USER
+        ROLE_ADMIN: ROLE_SELLER
     access_control:
         # - { path: ^/admin, roles: ROLE_ADMIN }
-        # - { path: ^/profile, roles: ROLE_USER }
+    #    - { path: ^/api/users, roles: ROLE_USER }
+        - { path: ^/api/commandes, roles: ROLE_USER }
+        - { path: ^/api/appros, roles: ROLE_USER}
+        - { path: ^/api/me, roles: ROLE_USER }
+        - { path: ^/api/produits_post, roles: ROLE_USER }   
+        - { path: /authenticator_token, roles: PUBLIC_ACCESS }
+        - { path: ^/api/user , roles: PUBLIC_ACCESS }
+        - { path: ^/api/(login|token/refresh), roles: PUBLIC_ACCESS }
+        - { path: ^api/token/invalidate, roles: PUBLIC_ACCESS }
+        
+         
 
 when@test:
     security:
